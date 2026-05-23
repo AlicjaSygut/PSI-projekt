@@ -1,3 +1,7 @@
+dane <- read.csv("Bank_of_America_BankofAmericaMobileBanking.csv", stringsAsFactors = FALSE, header = FALSE, encoding = "UTF-8")
+tresc <- dane[, 1]
+corpus <- VCorpus(VectorSource(tresc))
+
 #' ---
 #' title: "Asocjacje"
 #' author: " "
