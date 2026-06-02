@@ -1,11 +1,12 @@
 
-# install.packages("RColorBrewer")
-# install.packages("tm")
-# install.packages("tidyverse")
-# install.packages("tidytext")
-# install.packages("wordcloud")
-# install.packages("ggplot")
-# install.packages("ggthemes")
+ #install.packages("RColorBrewer")
+ #install.packages("tm")
+ #install.packages("tidyverse")
+ #install.packages("tidytext")
+ #install.packages("wordcloud")
+ #install.packages("ggplot2")
+ #install.packages("ggthemes")
+ #install.packages("SentimentAnalysis")
 
 # Wymagane pakiety ----
 library(tm)
@@ -47,7 +48,7 @@ corpus <- tm_map(corpus, removeNumbers)
 
 # Usunięcie niepotrzebnych wyrazów
 corpus <- tm_map(corpus, removeWords, c("bank", "banking", "america", "american", "fargo",
-                                        "chase", "wells", "capital", "boa", "citi", "morgan", "jp"))
+                                        "chase", "wells", "capital", "boa", "citi", "morgan", "jp", "also", "sooooo"))
 
 # Usunięcie nadmiarowych białych znaków z tekstu
 corpus <- tm_map(corpus, stripWhitespace)
@@ -171,11 +172,10 @@ summary(DictionaryGI)
 sentimentGI <- convertToDirection(sentiment$SentimentGI)
 
 
-# Wykres skumulowanego sentymentu kierunkowego
-plot(sentimentGI)
 
 
-# Ten sam wykres w ggplot2:
+
+# Wykres skumulowanego sentymentu kierunkowego w ggplot2:
 # Konwersja do ramki danych (ggplot wizualizuje ramki danych)
 df_GI <- data.frame(index = seq_along(sentimentGI), value = sentimentGI, Dictionary = "GI")
 
@@ -183,7 +183,7 @@ df_GI <- data.frame(index = seq_along(sentimentGI), value = sentimentGI, Diction
 df_GI <- na.omit(df_GI)
 
 ggplot(df_GI, aes(x = value)) +
-  geom_bar(fill = "pink", alpha = 0.7) + 
+  geom_bar(fill = "deeppink", alpha = 0.7) + 
   labs(title = "Skumulowany sentyment (GI)",
        x = "Sentyment",
        y = "Liczba") +
@@ -212,11 +212,8 @@ summary(DictionaryHE)
 sentimentHE <- convertToDirection(sentiment$SentimentHE)
 
 
-# Wykres skumulowanego sentymentu kierunkowego
-plot(sentimentHE)
 
-
-# Ten sam wykres w ggplot2:
+# Wykres skumulowanego sentymentu kierunkowego w ggplot2:
 # Konwersja do ramki danych (ggplot wizualizuje ramki danych)
 df_HE <- data.frame(index = seq_along(sentimentHE), value = sentimentHE, Dictionary = "HE")
 
@@ -224,7 +221,7 @@ df_HE <- data.frame(index = seq_along(sentimentHE), value = sentimentHE, Diction
 df_HE <- na.omit(df_HE)
 
 ggplot(df_HE, aes(x = value)) +
-  geom_bar(fill = "blue", alpha = 0.7) + 
+  geom_bar(fill = "mediumblue", alpha = 0.7) + 
   labs(title = "Skumulowany sentyment (HE)",
        x = "Sentyment",
        y = "Liczba") +
@@ -251,11 +248,11 @@ summary(DictionaryLM)
 sentimentLM <- convertToDirection(sentiment$SentimentLM)
 
 
-# Wykres skumulowanego sentymentu kierunkowego
-plot(sentimentLM)
 
 
-# Ten sam wykres w ggplot2:
+
+
+# Wykres skumulowanego sentymentu kierunkowego w ggplot2:
 # Konwersja do ramki danych (ggplot wizualizuje ramki danych)
 df_LM <- data.frame(index = seq_along(sentimentLM), value = sentimentLM, Dictionary = "LM")
 
@@ -263,7 +260,7 @@ df_LM <- data.frame(index = seq_along(sentimentLM), value = sentimentLM, Diction
 df_LM <- na.omit(df_LM)
 
 ggplot(df_LM, aes(x = value)) +
-  geom_bar(fill = "purple", alpha = 0.7) + 
+  geom_bar(fill = "darkorchid", alpha = 0.7) + 
   labs(title = "Skumulowany sentyment (LM)",
        x = "Sentyment",
        y = "Liczba") +
@@ -289,11 +286,8 @@ summary(qdap)
 sentimentQDAP <- convertToDirection(sentiment$SentimentQDAP)
 
 
-# Wykres skumulowanego sentymentu kierunkowego
-plot(sentimentQDAP)
 
-
-# Ten sam wykres w ggplot2:
+# Wykres skumulowanego sentymentu kierunkowego w ggplot2:
 # Konwersja do ramki danych (ggplot wizualizuje ramki danych)
 df_QDAP <- data.frame(index = seq_along(sentimentQDAP), value = sentimentQDAP, Dictionary = "QDAP")
 
@@ -301,7 +295,7 @@ df_QDAP <- data.frame(index = seq_along(sentimentQDAP), value = sentimentQDAP, D
 df_QDAP <- na.omit(df_QDAP)
 
 ggplot(df_QDAP, aes(x = value)) +
-  geom_bar(fill = "lightblue", alpha = 0.7) + 
+  geom_bar(fill = "darkcyan", alpha = 0.7) + 
   labs(title = "Skumulowany sentyment (QDAP)",
        x = "Sentyment",
        y = "Liczba") +
@@ -311,14 +305,7 @@ ggplot(df_QDAP, aes(x = value)) +
 
 # Porównanie sentymentu na podstawie różnych słowników ----
 
-# Minimalistycznie
-# plot(convertToDirection(sentiment$SentimentGI))
-# plot(convertToDirection(sentiment$SentimentHE))
-# plot(convertToDirection(sentiment$SentimentLM))
-# plot(convertToDirection(sentiment$SentimentQDAP))
 
-
-# Wizualnie lepsze w ggplot2
 # Połączenie poszczególnych ramek w jedną ramkę
 df_all <- bind_rows(df_GI, df_HE, df_LM, df_QDAP)
 
@@ -330,10 +317,10 @@ ggplot(df_all, aes(x = value, fill = Dictionary)) +
        y = "Liczba") +
   theme_bw() +
   facet_wrap(~Dictionary) +  # Podział na cztery osobne wykresy
-  scale_fill_manual(values = c("GI" = "green", 
-                               "HE" = "blue", 
-                               "LM" = "orange",
-                               "QDAP" = "red" ))
+  scale_fill_manual(values = c("GI" = "deeppink", 
+                               "HE" = "mediumblue", 
+                               "LM" = "darkorchid",
+                               "QDAP" = "darkcyan" ))
 
 
 
@@ -381,10 +368,10 @@ puste2
 
 
 ggplot(df_all, aes(x=sentence, y=QDAP)) +
-  geom_line(color="red", size=1) +
-  geom_line(aes(x=sentence, y=GI), color="green", size=1) +
-  geom_line(aes(x=sentence, y=HE), color="blue", size=1) +
-  geom_line(aes(x=sentence, y=LM), color="orange", size=1) +
+  geom_line(color= "darkcyan", size=1) +
+  geom_line(aes(x=sentence, y=GI), color="deeppink", size=1) +
+  geom_line(aes(x=sentence, y=HE), color="mediumblue", size=1) +
+  geom_line(aes(x=sentence, y=LM), color="darkorchid", size=1) +
   labs(x = "Oś czasu zdań", y = "Sentyment") +
   theme_gdocs() + 
   ggtitle("Zmiana sentymentu w czasie")
@@ -392,10 +379,10 @@ ggplot(df_all, aes(x=sentence, y=QDAP)) +
 
 
 ggplot(df_all, aes(x=sentence, y=QDAP)) + 
-  geom_smooth(color="red") +
-  geom_smooth(aes(x=sentence, y=GI), color="green") +
-  geom_smooth(aes(x=sentence, y=HE), color="blue") +
-  geom_smooth(aes(x=sentence, y=LM), color="orange") +
+  geom_smooth(color="darkcyan") +
+  geom_smooth(aes(x=sentence, y=GI), color="deeppink") +
+  geom_smooth(aes(x=sentence, y=HE), color="mediumblue") +
+  geom_smooth(aes(x=sentence, y=LM), color="darkorchid") +
   labs(x = "Oś czasu zdań", y = "Sentyment") +
   theme_gdocs() + 
   ggtitle("Zmiana sentymentu w czasie")
