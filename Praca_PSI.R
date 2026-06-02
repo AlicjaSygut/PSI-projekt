@@ -1,14 +1,44 @@
+#' ---
+#' title: "Projekt zaliczeniowy"
+#' author: "Autor: Zofia Bocian, Julia Chmielecka, Alicja Sygut"
+#' date: "`r Sys.Date()`"
+#' output:
+#'   html_document:
+#'     df_print: paged
+#'     theme: readable      # Wygląd (bootstrap, cerulean, darkly, journal, lumen, paper, readable, sandstone, simplex, spacelab, united, yeti)
+#'     highlight: kate      # Kolorowanie składni (haddock, kate, espresso, breezedark)
+#'     toc: true            # Spis treści
+#'     toc_depth: 3
+#'     toc_float:
+#'       collapsed: false
+#'       smooth_scroll: true
+#'     code_folding: hide    # Kod domyślnie zwinięty (estetyczniej)
+#'     number_sections: true # Numeruje nagłówki (lepsza nawigacja)
+#'     css: "custom.css"     # Możliwość stworzenia własnego stylowania (opcjonalne)
+#' ---
 
- #install.packages("RColorBrewer")
- #install.packages("tm")
- #install.packages("tidyverse")
- #install.packages("tidytext")
- #install.packages("wordcloud")
- #install.packages("ggplot2")
- #install.packages("ggthemes")
- #install.packages("SentimentAnalysis")
 
-# Wymagane pakiety ----
+knitr::opts_chunk$set(
+  message = FALSE,
+  warning = FALSE
+)
+#install.packages("RColorBrewer")
+#install.packages("tm")
+#install.packages("tidyverse")
+#install.packages("tidytext")
+#install.packages("wordcloud")
+#install.packages("ggplot2")
+#install.packages("ggthemes")
+#install.packages("SentimentAnalysis")
+#install.packages("dplyr")
+#install.packages("e1071")
+#install.packages("stringr")
+
+#'# Przygotowanie danych
+# Przygotowanie danych ----
+
+#'## Wymagane pakiety
+## Wymagane pakiety ----
 library(tm)
 library(tidyverse)
 library(tidytext)
@@ -16,13 +46,18 @@ library(wordcloud)
 library(ggplot2)
 library(ggthemes)
 library(RColorBrewer)
+library(SentimentAnalysis)
+library(dplyr)
+library(e1071)
+library(stringr)
 
-# Załadowanie danych i utworzenie korpusu. ----
+#'## Załadowanie danych i oczyszczenie korpusu. 
+## Załadowanie danych i oczyszczenie korpusu. ----
 dane <- read.csv("Aplikacje_all.csv", stringsAsFactors = FALSE, header = FALSE, encoding = "UTF-8")
 tresc <- dane[, 1]
 corpus <- VCorpus(VectorSource(tresc))
 
-# Przetwarzanie i oczyszczanie korpusu ze zbędnych znaków i wyrażeń ----
+# Przetwarzanie i oczyszczanie korpusu ze zbędnych znaków i wyrażeń
 
 # Zapewnienie kodowania w całym korpusie
 corpus <- tm_map(corpus, content_transformer(function(x) iconv(x, to = "UTF-8", sub = "byte")))
@@ -54,15 +89,23 @@ corpus <- tm_map(corpus, removeWords, c("bank", "banking", "america", "american"
 corpus <- tm_map(corpus, stripWhitespace)
 
 
-# Stworzenie macierzy Text Document Matrix  ----
+# Stworzenie macierzy Text Document Matrix
 tdm <- TermDocumentMatrix(corpus)
 tdm_m <- as.matrix(tdm)
+
+# Macierz częstości TDM z TF-IDF (dla Machine Learningu)
+tdm_tfidf <- TermDocumentMatrix(corpus, control = list(weighting = function(x) weightTfIdf(x, normalize = FALSE)))
+tdm_tfidf_m <- as.matrix(tdm_tfidf)
 
 # Zliczanie częstości słów
 v <- sort(rowSums(tdm_m), decreasing = TRUE)
 tdm_df <- data.frame(word = names(v), freq = v)
 
-# Chmura słów ----
+#'# Eksploracyjna analiza tekstu
+# Eksploracyjna analiza tekstu ----
+
+#'## Chmura słów 
+## Chmura słów ----
 
 # Ustawienia graficzne
 par(
@@ -81,7 +124,8 @@ wordcloud(words = tdm_df$word,
           colors = brewer.pal(8, "PiYG")
 )
 
-# Badanie asocjacji ----
+#'## Badanie asocjacji 
+## Badanie asocjacji ----
 
 # Wybór słów, których asocjacja zostanie zbadana.
 # Proponowane słowa: password, staff, credit, client, download, update, phone, error
@@ -130,30 +174,23 @@ for (target_word in target_words) {
 }
 
 
+#'# Analiza sentymentu 
+# Analiza sentymentu ----
 
-
-# Analiza sentymentu w czasie ----
-
-library(SentimentAnalysis)
-library(ggplot2)
-library(ggthemes)
-library(tidyverse)
 
 # Wczytanie danych tekstowych
-# Wczytujemy pierwszą kolumnę z pliku CSV ---
+# Wczytujemy pierwszą kolumnę z pliku CSV
 text <- read.csv("Aplikacje_all.csv", header = FALSE, stringsAsFactors = FALSE, encoding = "UTF-8")[, 1]
 
 
 
-# Analiza sentymentu przy użyciu pakietu SentimentAnalysis ----
+# Analiza sentymentu przy użyciu pakietu SentimentAnalysis
 sentiment <- analyzeSentiment(text)
 
 
-# odkomentuj i zobacz parametry funkcji:
-# ?analyzeSentiment
+#'## Słownik GI (General Inquirer)
 
-
-### Słownik GI (General Inquirer) ----
+## Słownik GI (General Inquirer) ----
 #
 # Słownik ogólnego zastosowania
 # zawiera listę słów pozytywnych i negatywnych
@@ -191,8 +228,8 @@ ggplot(df_GI, aes(x = value)) +
 
 
 
-
-### Słownik HE (Henry’s Financial dictionary) ----
+#'## Słownik HE (Henry’s Financial dictionary) 
+## Słownik HE (Henry’s Financial dictionary) ----
 #
 # zawiera listę słów pozytywnych i negatywnych
 # zgodnych z finansowym słownikiem "Henry 2008"
@@ -229,8 +266,8 @@ ggplot(df_HE, aes(x = value)) +
 
 
 
-
-### Słownik LM (Loughran-McDonald Financial dictionary) ----
+#'## Słownik LM (Loughran-McDonald Financial dictionary) 
+## Słownik LM (Loughran-McDonald Financial dictionary) ----
 #
 # zawiera listę słów pozytywnych i negatywnych oraz związanych z niepewnością
 # zgodnych z finansowym słownikiem Loughran-McDonald
@@ -268,8 +305,8 @@ ggplot(df_LM, aes(x = value)) +
 
 
 
-
-### Słownik QDAP (Quantitative Discourse Analysis Package) ----
+#'## Słownik QDAP (Quantitative Discourse Analysis Package)
+## Słownik QDAP (Quantitative Discourse Analysis Package) ----
 #
 # zawiera listę słów pozytywnych i negatywnych
 # do analizy dyskursu
@@ -302,8 +339,8 @@ ggplot(df_QDAP, aes(x = value)) +
   theme_bw()
 
 
-
-# Porównanie sentymentu na podstawie różnych słowników ----
+#'## Porównanie sentymentu na podstawie różnych słowników 
+## Porównanie sentymentu na podstawie różnych słowników ----
 
 
 # Połączenie poszczególnych ramek w jedną ramkę
@@ -322,40 +359,127 @@ ggplot(df_all, aes(x = value, fill = Dictionary)) +
                                "LM" = "darkorchid",
                                "QDAP" = "darkcyan" ))
 
+#'# Klasyfikacja (Machine Learning)
+# Klasyfikacja (Machine Learning) ----
+# Przygotowanie ocen z pliku ----
+
+# Wczytujemy plik jako surowe linie tekstu
+surowe_linie <- readLines("Aplikacje_all.csv", encoding = "UTF-8")
+
+# Używamy pakietu stringr, żeby "złapać" tylko cyfrę z samego końca każdego wiersza
+library(stringr)
+oceny_gwiazdki <- as.numeric(str_extract(surowe_linie, "\\d+$"))
+
+# Zamieniamy gwiazdki na kategorie "yes" i "no" (4-5 to yes, 1-3 to no)
+kategorie_polecenia <- ifelse(oceny_gwiazdki >= 4, "yes", "no")
+
+# Tworzymy ramkę danych dla modelu SVM
+dtm_df <- as.data.frame(t(tdm_tfidf_m))
+dtm_df$Recommended <- factor(kategorie_polecenia, levels = c("no", "yes"))
+
+#'## Podział na zbiór treningowy/testowy: STRATYFIKOWANY 
+## Podział na zbiór treningowy/testowy: STRATYFIKOWANY ----
+
+yes_class <- dtm_df[dtm_df$Recommended == "yes", ]
+no_class  <- dtm_df[dtm_df$Recommended == "no",  ]
+
+set.seed(123)
+yes_train_indices <- sample(1:nrow(yes_class), size = floor(0.8 * nrow(yes_class)))
+no_train_indices  <- sample(1:nrow(no_class),  size = floor(0.8 * nrow(no_class)))
+
+trainData <- rbind(yes_class[yes_train_indices, ], no_class[no_train_indices, ])
+testData  <- rbind(yes_class[-yes_train_indices, ], no_class[-no_train_indices, ])
+
+# Model klasyfikacji
+svm_model <- svm(Recommended ~ ., data = trainData, kernel = "linear", probability = TRUE, scale= FALSE)
+
+# Ocena modelu na zbiorze testowym
+predictions <- predict(svm_model, newdata = testData)
+confusion_matrix <- table(Predicted = predictions, Actual = testData$Recommended)
+print(confusion_matrix)
+
+# Wyciąganie TP, TN, FP, FN z confusion_matrix
+# "yes" jako pozytywna klasa
+TP <- confusion_matrix["yes", "yes"]
+TN <- confusion_matrix["no", "no"]
+FP <- confusion_matrix["yes", "no"]
+FN <- confusion_matrix["no", "yes"]
+
+cat("\nTrue Positives (TP):", TP,
+    "\nTrue Negatives (TN):", TN,
+    "\nFalse Positives (FP):", FP,
+    "\nFalse Negatives (FN):", FN, "\n")
+
+# Obliczenie metryk
+precision <- TP / (TP + FP)
+recall <- TP / (TP + FN)
+specificity <- TN / (TN + FP)
+accuracy <- (TP + TN) / sum(confusion_matrix)
+f1_score <- 2 * (precision * recall) / (precision + recall)
+
+
+cat("\nAccuracy:", round(accuracy, 2),
+    "\nPrecision (dla 'yes'):", round(precision, 2),
+    "\nRecall (dla 'yes'):", round(recall, 2),
+    "\nSpecificity (dla 'yes'):", round(specificity, 2),
+    "\nF1 Score:", round(f1_score, 2), "\n")
+
+
+#' ## Wizualizacja metryk, podział STRATYFIKOWANY
+## Wizualizacja metryk, podział STRATYFIKOWANY ----
+
+
+# Przygotowanie danych do wykresu
+metrics_df <- data.frame(
+  Metric = c("Accuracy", "Precision", "Recall", "Specificity", "F1 Score"),
+  Value = c(accuracy, precision, recall, specificity, f1_score)
+)
+
+
+ggplot(metrics_df, aes(x = Metric, y = Value, fill = Metric)) +
+  geom_col(width = 0.5, color = "black") +
+  geom_text(aes(label = round(Value, 2)), vjust = -0.5, size = 5) +
+  ylim(0, 1) +
+  labs(title = "Metryka", y = "Wartość", x = "") +
+  scale_fill_brewer(palette = "Set1") +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "none")
 
 
 
-# Agregowanie sentymentu z różnych słowników w czasie ----
+
+# Przygotowanie do wizualizacji macierzy pomyłek
+confusion_df <- as.data.frame(as.table(confusion_matrix))
+
+# Tworzenie etykiet dla pól macierzy
+confusion_df$Label <- c("True Negative (TN)", "False Positive (FP)", 
+                        "False Negative (FN)", "True Positive (TP)")
 
 
-# Sprawdzenie ilości obserwacji
-length(sentiment[,1])
+# Oznaczenie poprawności klasyfikacji (Correct / Incorrect)
+confusion_df$Correctness <- ifelse(confusion_df$Label %in% c("True Positive (TP)", "True Negative (TN)"),
+                                   "Correct", "Incorrect")
 
 
-# Utworzenie ramki danych
-df_all <- data.frame(sentence=1:length(sentiment[,1]),
-                     GI=sentiment$SentimentGI, 
-                     HE=sentiment$SentimentHE, 
-                     LM=sentiment$SentimentLM,
-                     QDAP=sentiment$SentimentQDAP)
+# Przypisanie kolorów do typów błędów
+confusion_df$FillColor <- case_when(
+  confusion_df$Label == "True Positive (TP)" ~ "#52B788",
+  confusion_df$Label == "True Negative (TN)" ~ "#52B788",
+  confusion_df$Label == "False Positive (FP)" ~ "#FFD166",
+  confusion_df$Label == "False Negative (FN)" ~ "#EF476F"
+)
 
 
-
-# USUNIĘCIE BRAKUJĄCYCH WARTOŚCI
-# gdyż wartości NA (puste) uniemożliwiają generowanie wykresu w ggplot
-#
-
-# Usunięcie wartości NA
-# Wybranie tylko niekompletnych przypadków:
-puste <- df_all[!complete.cases(df_all), ]
-
-
-# Usunięcie pustych obserwacji
-# np. dla zmiennej QDAP (wszystkie mają NA)
-df_all <- df_all[!is.na(df_all$QDAP), ]
-
-
-# Sprawdzenie, czy wartości NA zostały usunięte
-# wtedy puste2 ma 0 wierszy:
-puste2 <- df_all[!complete.cases(df_all), ]
-puste2
+# Wiersze to Predicted (prognozowane), kolumny to Actual (rzeczywiste)
+# z przypisanymi kolorami i etykietami
+ggplot(confusion_df, aes(x = Actual, y = Predicted, fill = FillColor)) +
+  geom_tile(color = "white", linewidth=1.5) +
+  geom_text(aes(label = paste(Label, "\n", Freq)), size = 4, fontface = "bold", color = "#2B2D42") +
+  scale_fill_identity(guide = "legend",
+                      breaks = c("#52B788", "#FFD166", "#EF476F"),
+                      labels = c("TP / TN (Poprawnie)",
+                                 "False Positive (Błąd I typu)",
+                                 "False Negative (Błąd II typu)"),
+                      name = "Wynik klasyfikacji") +
+  labs(title = "Macierz Pomyłek (Confusion Matrix)") +
+  theme_minimal(base_size = 14)
