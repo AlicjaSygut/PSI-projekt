@@ -359,30 +359,3 @@ df_all <- df_all[!is.na(df_all$QDAP), ]
 # wtedy puste2 ma 0 wierszy:
 puste2 <- df_all[!complete.cases(df_all), ]
 puste2
-
-
-
-
-# Wykresy przedstawiające ewolucję sentymentu w czasie ----
-
-
-
-ggplot(df_all, aes(x=sentence, y=QDAP)) +
-  geom_line(color= "darkcyan", size=1) +
-  geom_line(aes(x=sentence, y=GI), color="deeppink", size=1) +
-  geom_line(aes(x=sentence, y=HE), color="mediumblue", size=1) +
-  geom_line(aes(x=sentence, y=LM), color="darkorchid", size=1) +
-  labs(x = "Oś czasu zdań", y = "Sentyment") +
-  theme_gdocs() + 
-  ggtitle("Zmiana sentymentu w czasie")
-
-
-
-ggplot(df_all, aes(x=sentence, y=QDAP)) + 
-  geom_smooth(color="darkcyan") +
-  geom_smooth(aes(x=sentence, y=GI), color="deeppink") +
-  geom_smooth(aes(x=sentence, y=HE), color="mediumblue") +
-  geom_smooth(aes(x=sentence, y=LM), color="darkorchid") +
-  labs(x = "Oś czasu zdań", y = "Sentyment") +
-  theme_gdocs() + 
-  ggtitle("Zmiana sentymentu w czasie")
