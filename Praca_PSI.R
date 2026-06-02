@@ -1,36 +1,12 @@
-dane <- read.csv("Bank_of_America_BankofAmericaMobileBanking.csv", stringsAsFactors = FALSE, header = FALSE, encoding = "UTF-8")
-tresc <- dane[, 1]
-corpus <- VCorpus(VectorSource(tresc))
 
-#' ---
-#' title: "Asocjacje"
-#' author: " "
-#' date:   " "
-#' output:
-#'   html_document:
-#'     df_print: paged
-#'     theme: readable      # Wygląd (bootstrap, cerulean, darkly, journal, lumen, paper, readable, sandstone, simplex, spacelab, united, yeti)
-#'     highlight: kate      # Kolorowanie składni (haddock, kate, espresso, breezedark)
-#'     toc: true            # Spis treści
-#'     toc_depth: 3
-#'     toc_float:
-#'       collapsed: false
-#'       smooth_scroll: true
-#'     code_folding: show    
-#'     number_sections: false # Numeruje nagłówki (lepsza nawigacja)
-#' ---
+# install.packages("RColorBrewer")
+# install.packages("tm")
+# install.packages("tidyverse")
+# install.packages("tidytext")
+# install.packages("wordcloud")
+# install.packages("ggplot")
+# install.packages("ggthemes")
 
-
-knitr::opts_chunk$set(
-  message = FALSE,
-  warning = FALSE
-)
-
-
-
-
-
-#' # Wymagane pakiety
 # Wymagane pakiety ----
 library(tm)
 library(tidyverse)
@@ -38,205 +14,86 @@ library(tidytext)
 library(wordcloud)
 library(ggplot2)
 library(ggthemes)
+library(RColorBrewer)
 
+# Załadowanie danych i utworzenie korpusu. ----
+dane <- read.csv("Aplikacje_all.csv", stringsAsFactors = FALSE, header = FALSE, encoding = "UTF-8")
+tresc <- dane[, 1]
+corpus <- VCorpus(VectorSource(tresc))
 
-
-#' # Dane tekstowe
-# Dane tekstowe ----
-
-# Ustaw Working Directory!
-# Załaduj dokumenty z folderu
-# docs <- DirSource("textfolder2")
-# W razie potrzeby dostosuj ścieżkę
-# np.: docs <- DirSource("C:/User/Documents/textfolder2")
-
-
-# Utwórz korpus dokumentów tekstowych
-
-# Gdy tekst znajduje się w jednym pliku csv:
-data <- read.csv("LOT_reviews.csv", stringsAsFactors = FALSE, encoding = "UTF-8")
-corpus <- VCorpus(VectorSource(data$Review_Text))
-
-
-# Korpus
-# inspect(corpus)
-
-
-# Korpus - zawartość przykładowego elementu
-corpus[[1]]
-corpus[[1]][[1]]
-corpus[[1]][2]
-
-
-
-#' # 1. Przetwarzanie i oczyszczanie tekstu
-# 1. Przetwarzanie i oczyszczanie tekstu ----
-# (Text Preprocessing and Text Cleaning)
-
-
-# Normalizacja i usunięcie zbędnych znaków ----
+# Przetwarzanie i oczyszczanie korpusu ze zbędnych znaków i wyrażeń ----
 
 # Zapewnienie kodowania w całym korpusie
 corpus <- tm_map(corpus, content_transformer(function(x) iconv(x, to = "UTF-8", sub = "byte")))
 
-
 # Funkcja do zamiany znaków na spację
 toSpace <- content_transformer(function (x, pattern) gsub(pattern, " ", x))
 
-
-# Usuń zbędne znaki lub pozostałości url, html itp.
-
-# symbol @
+# Usunięcue znaku @
 corpus <- tm_map(corpus, toSpace, "@")
 
-# symbol @ ze słowem (zazw. nazwa użytkownika)
-corpus <- tm_map(corpus, toSpace, "@\\w+")
+# Usunięcie interpunkcji z wyłączeniem myślniknów między słowami i apostrofów między słowami
+corpus <- tm_map(corpus, removePunctuation, preserve_intra_word_dashes = TRUE,
+                                            preserve_intra_word_contractions = TRUE)
 
-# linia pionowa
-corpus <- tm_map(corpus, toSpace, "\\|")
-
-# tabulatory
-corpus <- tm_map(corpus, toSpace, "[ \t]{2,}")
-
-# CAŁY adres URL:
-corpus <- tm_map(corpus, toSpace, "(s?)(f|ht)tp(s?)://\\S+\\b")
-
-# http i https
-corpus <- tm_map(corpus, toSpace, "http\\w*")
-
-# tylko ukośnik odwrotny (np. po http)
-corpus <- tm_map(corpus, toSpace, "/")
-
-# pozostałość po re-tweecie
-corpus <- tm_map(corpus, toSpace, "(RT|via)((?:\\b\\W*@\\w+)+)")
-
-# inne pozostałości
-corpus <- tm_map(corpus, toSpace, "www")
-corpus <- tm_map(corpus, toSpace, "~")
-corpus <- tm_map(corpus, toSpace, "â€“")
-
-
-# Sprawdzenie
-corpus[[1]][[1]]
-
+# Zamiana wszystkiego na małe litery 
 corpus <- tm_map(corpus, content_transformer(tolower))
-corpus <- tm_map(corpus, removeNumbers)
+
+# Usunięcie wyrazów o prawie zerowej wartości informacyjnej
 corpus <- tm_map(corpus, removeWords, stopwords("english"))
-corpus <- tm_map(corpus, removePunctuation)
+
+# Usunięcie liczb 
+corpus <- tm_map(corpus, removeNumbers)
+
+# Usunięcie niepotrzebnych wyrazów
+corpus <- tm_map(corpus, removeWords, c("bank", "banking", "america", "american", "fargo",
+                                        "chase", "wells", "capital", "boa", "citi", "morgan", "jp"))
+
+# Usunięcie nadmiarowych białych znaków z tekstu
 corpus <- tm_map(corpus, stripWhitespace)
 
 
-# Sprawdzenie
-corpus[[1]][[1]]
-
-# usunięcie ewt. zbędnych nazw własnych
-corpus <- tm_map(corpus, removeWords, c("flight", "lot"))
-
-corpus <- tm_map(corpus, stripWhitespace)
-
-# Sprawdzenie
-corpus[[1]][[1]]
-
-
-
-# Decyzja dotycząca korpusu ----
-# do dalszej analizy użyj:
-#
-# - corpus (oryginalny, bez stemmingu)
-#
-
-
-
-
-#' # Tokenizacja
-# Tokenizacja ----
-
-
-
-# Macierz częstości TDM ----
-
+# Stworzenie macierzy Text Document Matrix  ----
 tdm <- TermDocumentMatrix(corpus)
 tdm_m <- as.matrix(tdm)
 
-
-
-#' # 2. Zliczanie częstości słów
-# 2. Zliczanie częstości słów ----
-# (Word Frequency Count)
-
-
-# Zlicz same częstości słów w macierzach
+# Zliczanie częstości słów
 v <- sort(rowSums(tdm_m), decreasing = TRUE)
 tdm_df <- data.frame(word = names(v), freq = v)
-head(tdm_df, 10)
 
+# Chmura słów ----
 
+# Ustawienia graficzne
+par(
+  bg = "#292929",    
+  family = "sans",    
+  mar = c(0, 0, 0, 0) 
+)
 
-#' # 3. Eksploracyjna analiza danych
-# 3. Eksploracyjna analiza danych ----
-# (Exploratory Data Analysis, EDA)
+# Chmura słów
+wordcloud(words = tdm_df$word,
+          freq = tdm_df$freq,
+          min.freq = 7, 
+          max.words = 100,
+          random.order = FALSE,
+          scale = c(4.0, 1.0),
+          colors = brewer.pal(8, "PiYG")
+          )
 
+# Badanie asocjacji ----
 
-# Chmura słów (globalna)
-wordcloud(words = tdm_df$word, freq = tdm_df$freq, min.freq = 7, 
-          colors = brewer.pal(8, "Dark2"))
+# Wybór słów, których asocjacja zostanie zbadana.
+# Proponowane słowa: password, staff, credit, client, download, update, phone, error
+target_words <- c("password", "credit", "client", "download")
+cor_limit <- 0.2
 
+# Pętla dla wybranych słów
+for (target_word in target_words) {
 
-# Wyświetl top 10
-print(head(tdm_df, 10))
-
-
-
-#' # 4. Inżynieria cech w modelu Bag of Words:
-#' # Reprezentacja słów i dokumentów w przestrzeni wektorowej
-# 4. Inżynieria cech w modelu Bag of Words: ----
-# Reprezentacja słów i dokumentów w przestrzeni wektorowej ----
-# (Feature Engineering in vector-space BoW model)
-
-# - podejście surowych częstości słów
-# (częstość słowa = liczba wystąpień w dokumencie)
-# (Raw Word Counts)
-
-
-
-#' # Asocjacje - znajdowanie współwystępujących słów
-# Asocjacje - znajdowanie współwystępujących słów ----
-
-
-
-# Funkcja findAssoc() w pakiecie tm służy do:
-# - znajdowania słów najbardziej skorelowanych z danym terminem w macierzy TDM/DTM
-# - wykorzystuje korelację Pearsona między wektorami słów
-# - jej działanie nie opiera się na algorytmach machine learning
-
-
-# Samodzielnie wytypuj słowa (terminy), 
-# które chcesz zbadać pod kątem asocjacji
-
-
-findAssocs(tdm,"service",0.5)
-findAssocs(tdm,"experience",0.5)
-findAssocs(tdm,"passengers",0.5)
-findAssocs(tdm,"staff",0.5)
-findAssocs(tdm,"crews",0.5)
-findAssocs(tdm,"prices",0.5)
-
-
-
-#' # Wizualizacja asocjacji
-# Wizualizacja asocjacji ----
-
-
-# Wytypowane słowo i próg asocjacji
-target_word <- "crews"
-cor_limit <- 0.4
-
-
-# Oblicz asocjacje dla tego słowa
+# Obliczenie asocjacji dla danego słowa
 associations <- findAssocs(tdm, target_word, corlimit = cor_limit)
 assoc_vector <- associations[[target_word]]
 assoc_sorted <- sort(assoc_vector, decreasing = TRUE)
-
 
 # Ramka danych
 assoc_df <- data.frame(
@@ -244,13 +101,15 @@ assoc_df <- data.frame(
   score = assoc_sorted
 )
 
+# Ograniczenie danych, aby nie było chaosu informacyjnego
+assoc_30 <- head(assoc_df, 30)
+
 
 # Wykres lizakowy (lollipop chart)
-# stosowany w raportach biznesowych i dashboardach:
-ggplot(assoc_df, aes(x = score, y = reorder(word, score))) +
-  geom_segment(aes(x = 0, xend = score, y = word, yend = word), color = "#a6bddb", size = 1.2) +
-  geom_point(color = "#0570b0", size = 4) +
-  geom_text(aes(label = round(score, 2)), hjust = -0.3, size = 3.5, color = "black") +
+plot <- ggplot(assoc_30, aes(x = score, y = reorder(word, score))) +
+  geom_segment(aes(x = 0, xend = score, y = word, yend = word), color = "#FFBDF8", linewidth = 1.5, size = 1.2) +
+  geom_point(color = "#FA61AE", size = 4) +
+  geom_text(aes(label = round(score, 2)), hjust = -0.5, size = 3.0, color = "black") +
   scale_x_continuous(limits = c(0, max(assoc_df$score) + 0.1), expand = expansion(mult = c(0, 0.2))) +
   theme_minimal(base_size = 12) +
   labs(
@@ -260,38 +119,14 @@ ggplot(assoc_df, aes(x = score, y = reorder(word, score))) +
     y = "Słowo"
   ) +
   theme(
-    plot.title = element_text(face = "bold"),
-    axis.title.x = element_text(margin = margin(t = 10)),
-    axis.title.y = element_text(margin = margin(r = 10))
+    plot.title = element_text(family = "mono", face = "bold", size = 16),
+    axis.title.x = element_text(margin = margin(t = 10), family = "mono"),
+    axis.title.y = element_text(margin = margin(r = 10), family = "mono"),
+    axis.text.y = element_text(family = "mono", face = "bold", size = 11),
+    plot.subtitle = element_text(family = "mono", size = 11, margin = margin(b = 15))
   )
-
-
-
-# Wykres lizakowy z natężeniem
-# na podstawie wartości korelacji score:
-ggplot(assoc_df, aes(x = score, y = reorder(word, score), color = score)) +
-  geom_segment(aes(x = 0, xend = score, y = word, yend = word), size = 1.2) +
-  geom_point(size = 4) +
-  geom_text(aes(label = round(score, 2)), hjust = -0.3, size = 3.5, color = "black") +
-  scale_color_gradient(low = "#a6bddb", high = "#08306b") +
-  scale_x_continuous(
-    limits = c(0, max(assoc_df$score) + 0.1),
-    expand = expansion(mult = c(0, 0.2))
-  ) +
-  theme_minimal(base_size = 12) +
-  labs(
-    title = paste0("Asocjacje z terminem: '", target_word, "'"),
-    subtitle = paste0("Próg r ≥ ", cor_limit),
-    x = "Współczynnik korelacji Pearsona",
-    y = "Słowo",
-    color = "Natężenie\nskojarzenia"
-  ) +
-  theme(
-    plot.title = element_text(face = "bold"),
-    axis.title.x = element_text(margin = margin(t = 10)),
-    axis.title.y = element_text(margin = margin(r = 10)),
-    legend.position = "right"
-  )
+print(plot)
+}
 
 
 #' ---
