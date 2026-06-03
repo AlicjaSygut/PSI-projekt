@@ -22,17 +22,17 @@ knitr::opts_chunk$set(
   message = FALSE,
   warning = FALSE
 )
-#install.packages("RColorBrewer")
-#install.packages("tm")
-#install.packages("tidyverse")
-#install.packages("tidytext")
-#install.packages("wordcloud")
-#install.packages("ggplot2")
-#install.packages("ggthemes")
-#install.packages("SentimentAnalysis")
-#install.packages("dplyr")
-#install.packages("e1071")
-#install.packages("stringr")
+# install.packages("RColorBrewer")
+# install.packages("tm")
+# install.packages("tidyverse")
+# install.packages("tidytext")
+# install.packages("wordcloud")
+# install.packages("ggplot2")
+# install.packages("ggthemes")
+# install.packages("SentimentAnalysis")
+# install.packages("dplyr")
+# install.packages("e1071")
+# install.packages("stringr")
 
 #'# Przygotowanie danych
 # Przygotowanie danych ----
@@ -198,7 +198,7 @@ sentiment <- analyzeSentiment(text)
 # DictionaryGI
 
 
-# Wczytaj słownik GI
+# Wczytanie słownika GI
 data(DictionaryGI)
 summary(DictionaryGI)
 
@@ -231,14 +231,13 @@ ggplot(df_GI, aes(x = value)) +
 #'## Słownik HE (Henry’s Financial dictionary) 
 ## Słownik HE (Henry’s Financial dictionary) ----
 #
-# zawiera listę słów pozytywnych i negatywnych
+# Zawiera listę słów pozytywnych i negatywnych
 # zgodnych z finansowym słownikiem "Henry 2008"
-# pierwszy, jaki powstał w wyniku analizy komunikatów prasowych 
 # dotyczących zysków w branży telekomunikacyjnej i usług IT
 # DictionaryHE
 
 
-# Wczytaj słownik HE
+# Wczytanie słownika HE
 data(DictionaryHE)
 summary(DictionaryHE)
 
@@ -269,12 +268,12 @@ ggplot(df_HE, aes(x = value)) +
 #'## Słownik LM (Loughran-McDonald Financial dictionary) 
 ## Słownik LM (Loughran-McDonald Financial dictionary) ----
 #
-# zawiera listę słów pozytywnych i negatywnych oraz związanych z niepewnością
+# Zawiera listę słów pozytywnych i negatywnych oraz związanych z niepewnością
 # zgodnych z finansowym słownikiem Loughran-McDonald
 # DictionaryLM
 
 
-# Wczytaj słownik LM
+# Wczytanie słownika LM
 data(DictionaryLM)
 summary(DictionaryLM)
 
@@ -308,11 +307,11 @@ ggplot(df_LM, aes(x = value)) +
 #'## Słownik QDAP (Quantitative Discourse Analysis Package)
 ## Słownik QDAP (Quantitative Discourse Analysis Package) ----
 #
-# zawiera listę słów pozytywnych i negatywnych
+# Zawiera listę słów pozytywnych i negatywnych
 # do analizy dyskursu
 
 
-# Wczytaj słownik QDAP
+# Wczytanie słownika QDAP
 qdap <- loadDictionaryQDAP()
 summary(qdap)
 
@@ -363,17 +362,17 @@ ggplot(df_all, aes(x = value, fill = Dictionary)) +
 # Klasyfikacja (Machine Learning) ----
 # Przygotowanie ocen z pliku ----
 
-# Wczytujemy plik jako surowe linie tekstu
+# Wczytanie pliku jako surowych linii tekstu
 surowe_linie <- readLines("Aplikacje_all.csv", encoding = "UTF-8")
 
-# Używamy pakietu stringr, żeby "złapać" tylko cyfrę z samego końca każdego wiersza
+# Użycie pakietu stringr, żeby "złapać" tylko cyfrę z samego końca każdego wiersza
 library(stringr)
 oceny_gwiazdki <- as.numeric(str_extract(surowe_linie, "\\d+$"))
 
-# Zamieniamy gwiazdki na kategorie "yes" i "no" (4-5 to yes, 1-3 to no)
+# Zamienienie gwiazdek na kategorie "yes" i "no" (4-5 to yes, 1-3 to no)
 kategorie_polecenia <- ifelse(oceny_gwiazdki >= 4, "yes", "no")
 
-# Tworzymy ramkę danych dla modelu SVM
+# Utworzenie ramki danych dla modelu SVM
 dtm_df <- as.data.frame(t(tdm_tfidf_m))
 dtm_df$Recommended <- factor(kategorie_polecenia, levels = c("no", "yes"))
 
